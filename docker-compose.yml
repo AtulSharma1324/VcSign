@@ -62,8 +62,8 @@ services:
   # --- Signaling Server ---
   signaling-server:
     build:
-      context: ./backend
-      dockerfile: signaling-server/Dockerfile
+      context: .
+      dockerfile: backend/signaling-server/Dockerfile
     container_name: signlang-signaling
     ports:
       - "4000:4000"
@@ -79,8 +79,8 @@ services:
   # --- Auth Service ---
   auth-service:
     build:
-      context: ./backend
-      dockerfile: auth-service/Dockerfile
+      context: .
+      dockerfile: backend/auth-service/Dockerfile
     container_name: signlang-auth
     ports:
       - "4001:4001"
@@ -100,8 +100,8 @@ services:
   # --- User Service ---
   user-service:
     build:
-      context: ./backend
-      dockerfile: user-service/Dockerfile
+      context: .
+      dockerfile: backend/user-service/Dockerfile
     container_name: signlang-user
     ports:
       - "4002:4002"
