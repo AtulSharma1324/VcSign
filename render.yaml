@@ -1,0 +1,61 @@
+services:
+  # ------------------------------------
+  # Auth Service
+  # ------------------------------------
+  - type: web
+    name: vc-auth-service
+    env: docker
+    region: oregon
+    plan: free # Change to starter/standard for production
+    dockerfilePath: ./backend/auth-service/Dockerfile
+    envVars:
+      - key: DATABASE_URL
+        sync: false # Requires manual entry in Render dashboard (Supabase URL)
+      - key: REDIS_URL
+        sync: false # Requires manual entry in Render dashboard (Upstash/Render Redis)
+      - key: JWT_ACCESS_SECRET
+        generateValue: true
+      - key: JWT_REFRESH_SECRET
+        generateValue: true
+      - key: APP_URL
+        sync: false # e.g. https://your-vercel-app.vercel.app
+      - key: AUTH_SERVICE_PORT
+        value: 4001
+
+  # ------------------------------------
+  # User Service
+  # ------------------------------------
+  - type: web
+    name: vc-user-service
+    env: docker
+    region: oregon
+    plan: free
+    dockerfilePath: ./backend/user-service/Dockerfile
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: REDIS_URL
+        sync: false
+      - key: JWT_ACCESS_SECRET
+        sync: false # Must match auth-service secret
+      - key: USER_SERVICE_PORT
+        value: 4002
+
+  # ------------------------------------
+  # Signaling Server (WebRTC Socket.IO)
+  # ------------------------------------
+  - type: web
+    name: vc-signaling-server
+    env: docker
+    region: oregon
+    plan: free # Note: WebSockets work better on paid tiers
+    dockerfilePath: ./backend/signaling-server/Dockerfile
+    envVars:
+      - key: REDIS_URL
+        sync: false
+      - key: JWT_ACCESS_SECRET
+        sync: false # Must match auth-service secret
+      - key: APP_URL
+        sync: false
+      - key: SIGNALING_PORT
+        value: 4000

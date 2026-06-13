@@ -1,0 +1,174 @@
+# ===========================
+# SignLang VC — Docker Compose (Development)
+# ===========================
+
+services:
+  # --- Database ---
+  postgres:
+    image: postgres:15-alpine
+    container_name: signlang-postgres
+    environment:
+      POSTGRES_DB: signlang_vc
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./infrastructure/docker/init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # --- Cache ---
+  redis:
+    image: redis:7-alpine
+    container_name: signlang-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # --- Frontend ---
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: signlang-frontend
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_SIGNALING_URL=http://localhost:4000
+      - NEXT_PUBLIC_AUTH_URL=http://localhost:4001/api/auth
+      - NEXT_PUBLIC_USER_URL=http://localhost:4002/api/users
+      - NEXT_PUBLIC_CALL_URL=http://localhost:4003/api/calls
+      - NEXT_PUBLIC_CHAT_URL=http://localhost:4004/api/chat
+      - NEXT_PUBLIC_SIGN_AI_WS=ws://localhost:8000/ws/sign-recognition
+      - NEXT_PUBLIC_STT_WS=ws://localhost:8001/ws/transcribe
+      - NEXT_PUBLIC_TTS_URL=http://localhost:8002/api/tts
+      - NEXT_PUBLIC_NLP_URL=http://localhost:8003/api/nlp
+    volumes:
+      - ./frontend/src:/app/src
+    depends_on:
+      - signaling-server
+
+  # --- Signaling Server ---
+  signaling-server:
+    build:
+      context: ./backend
+      dockerfile: signaling-server/Dockerfile
+    container_name: signlang-signaling
+    ports:
+      - "4000:4000"
+    environment:
+      - SIGNALING_PORT=4000
+      - REDIS_URL=redis://redis:6379
+      - JWT_ACCESS_SECRET=${JWT_ACCESS_SECRET:-dev-access-secret}
+      - APP_URL=http://localhost:3000
+    depends_on:
+      redis:
+        condition: service_healthy
+
+  # --- Auth Service ---
+  auth-service:
+    build:
+      context: ./backend
+      dockerfile: auth-service/Dockerfile
+    container_name: signlang-auth
+    ports:
+      - "4001:4001"
+    environment:
+      - AUTH_SERVICE_PORT=4001
+      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/signlang_vc
+      - REDIS_URL=redis://redis:6379
+      - JWT_ACCESS_SECRET=${JWT_ACCESS_SECRET:-dev-access-secret}
+      - JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET:-dev-refresh-secret}
+      - APP_URL=http://localhost:3000
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  # --- User Service ---
+  user-service:
+    build:
+      context: ./backend
+      dockerfile: user-service/Dockerfile
+    container_name: signlang-user
+    ports:
+      - "4002:4002"
+    environment:
+      - USER_SERVICE_PORT=4002
+      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/signlang_vc
+      - REDIS_URL=redis://redis:6379
+      - JWT_ACCESS_SECRET=${JWT_ACCESS_SECRET:-dev-access-secret}
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  # --- Sign Recognition AI ---
+  sign-recognition:
+    profiles: ["ai"]
+    build:
+      context: ./ai-service/sign_recognition
+      dockerfile: Dockerfile
+    container_name: signlang-sign-ai
+    ports:
+      - "8000:8000"
+    environment:
+      - SIGN_LANGUAGE=ISL
+      - SIGN_MODEL_VERSION=v1
+      - APP_URL=http://localhost:3000
+    volumes:
+      - ./ai-service/sign_recognition/weights:/app/weights
+
+  # --- Speech-to-Text AI ---
+  speech-to-text:
+    profiles: ["ai"]
+    build:
+      context: ./ai-service/speech_to_text
+      dockerfile: Dockerfile
+    container_name: signlang-stt
+    ports:
+      - "8001:8001"
+    environment:
+      - WHISPER_MODEL_SIZE=medium
+      - WHISPER_DEVICE=cpu
+      - WHISPER_COMPUTE_TYPE=int8
+      - APP_URL=http://localhost:3000
+
+  # --- Text-to-Speech AI ---
+  text-to-speech:
+    profiles: ["ai"]
+    build:
+      context: ./ai-service/text_to_speech
+      dockerfile: Dockerfile
+    container_name: signlang-tts
+    ports:
+      - "8002:8002"
+    environment:
+      - APP_URL=http://localhost:3000
+
+  # --- NLP Engine ---
+  nlp-engine:
+    profiles: ["ai"]
+    build:
+      context: ./ai-service/nlp_engine
+      dockerfile: Dockerfile
+    container_name: signlang-nlp
+    ports:
+      - "8003:8003"
+    environment:
+      - APP_URL=http://localhost:3000
+
+volumes:
+  postgres_data:
+  redis_data:
