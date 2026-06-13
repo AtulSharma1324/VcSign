@@ -7,12 +7,13 @@ dotenv.config();
 // PostgreSQL Connection Pool
 // ===========================
 
+const isSupabase = process.env.DATABASE_URL?.includes("supabase");
 const poolConfig: PoolConfig = {
   connectionString: process.env.DATABASE_URL,
   max: 20,
   idleTimeoutMillis: 30000,
   connectionTimeoutMillis: 5000,
-  ssl: process.env.NODE_ENV === "production" ? { rejectUnauthorized: false } : undefined,
+  ssl: (process.env.NODE_ENV === "production" || isSupabase) ? { rejectUnauthorized: false } : undefined,
 };
 
 export const pool = new Pool(poolConfig);
