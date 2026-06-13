@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { HandLandmarker, FilesetResolver } from "@mediapipe/tasks-vision";
-import * as tf from "@tensorflow/tfjs";
+// TensorFlow.js is loaded dynamically at runtime to avoid build issues
+let tf: any = null;
 import { getSocket } from "@/lib/socket";
 import { useCaptionStore } from "@/stores/captionStore";
 import { useAuthStore } from "@/stores/authStore";
@@ -80,6 +81,8 @@ export function useSignRecognition(
 
         // Load TensorFlow.js Model (Fallback if not found)
         try {
+          // Dynamically import TF.js at runtime
+          tf = (await import("@tensorflow/tfjs")).default || (await import("@tensorflow/tfjs"));
           // Expected to be placed in public/models/sign_model/model.json
           const model = await tf.loadLayersModel("/models/sign_model/model.json");
           tfModelRef.current = model;
