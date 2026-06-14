@@ -6,59 +6,65 @@ export default function AuthLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="min-h-screen flex">
-      {/* Left panel — decorative */}
-      <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden">
-        <div className="absolute inset-0 gradient-hero" />
-        <div className="absolute top-1/4 left-1/4 w-72 h-72 bg-white/10 rounded-full blur-[80px]" />
-        <div className="absolute bottom-1/4 right-1/4 w-64 h-64 bg-white/5 rounded-full blur-[60px]" />
+    <div className="min-h-screen flex bg-[var(--background)]">
+      {/* Left panel — decorative background */}
+      <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden bg-slate-950 flex-col justify-between p-16 select-none border-r border-white/5">
+        
+        {/* Full-bleed AI-generated background image */}
+        <div className="absolute inset-0 z-0">
+          <img 
+            src="/images/auth_hero.png" 
+            alt="Sign Language Background"
+            className="w-full h-full object-cover opacity-45"
+          />
+          {/* Dark gradient overlay for typography readability */}
+          <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/80 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-r from-slate-950 via-slate-950/40 to-transparent" />
+        </div>
 
-        <div className="relative z-10 flex flex-col justify-center px-16 text-white">
-          <div className="w-14 h-14 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center mb-8">
-            <span className="text-3xl">🤟</span>
+        {/* Brand Header */}
+        <div className="relative z-10 flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-[var(--color-primary-500)] to-[var(--color-accent-500)] flex items-center justify-center shadow-[0_0_20px_rgba(99,102,241,0.3)]">
+            <span className="text-xl">🤟</span>
           </div>
-          <h1 className="text-4xl font-bold font-[family-name:var(--font-display)] tracking-tight leading-tight">
+          <span className="text-lg font-bold font-[family-name:var(--font-display)] text-transparent bg-clip-text bg-gradient-to-r from-white to-slate-300">
+            SignLang VC
+          </span>
+        </div>
+
+        {/* Hero Content Overlaid */}
+        <div className="relative z-10 flex flex-col justify-center my-auto max-w-md w-full">
+          <h1 className="text-4xl font-extrabold font-[family-name:var(--font-display)] tracking-tight leading-tight text-white">
             Communication
             <br />
             Without Limits
           </h1>
-          <p className="mt-4 text-lg text-white/70 max-w-md">
+          <p className="mt-6 text-base text-slate-300 leading-relaxed">
             AI-powered sign language translation for seamless video calls
             between deaf and hearing users.
           </p>
+          
+          {/* Subtle live indicator representing real-time system */}
+          <div className="mt-8 flex items-center gap-2">
+            <div className="px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 flex items-center gap-1.5 w-fit">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+              <span className="text-[9px] font-bold text-emerald-400 tracking-widest uppercase">Real-time Translation Live</span>
+            </div>
+          </div>
+        </div>
 
-          <div className="mt-12 space-y-4">
-            {[
-              "Real-time ISL recognition",
-              "Live captions & AI voice",
-              "End-to-end encrypted",
-            ].map((item) => (
-              <div key={item} className="flex items-center gap-3">
-                <div className="w-5 h-5 rounded-full bg-white/20 flex items-center justify-center">
-                  <svg
-                    width="12"
-                    height="12"
-                    viewBox="0 0 12 12"
-                    fill="none"
-                  >
-                    <path
-                      d="M2.5 6L5 8.5L9.5 4"
-                      stroke="white"
-                      strokeWidth="1.5"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  </svg>
-                </div>
-                <span className="text-sm text-white/80">{item}</span>
-              </div>
-            ))}
+        {/* Brand Footer */}
+        <div className="relative z-10 flex items-center justify-between text-xs text-white/40 border-t border-white/5 pt-6">
+          <span>&copy; {new Date().getFullYear()} SignLang VC</span>
+          <div className="flex gap-4">
+            <span className="hover:text-white/60 cursor-pointer transition-colors">Privacy Policy</span>
+            <span className="hover:text-white/60 cursor-pointer transition-colors">Terms of Service</span>
           </div>
         </div>
       </div>
 
       {/* Right panel — form */}
-      <div className="flex-1 flex items-center justify-center px-4 py-12 sm:px-6 lg:px-8">
+      <div className="flex-1 flex items-center justify-center px-6 py-12 lg:px-8 bg-gradient-to-b from-slate-950 via-slate-950 to-slate-900">
         <div className="w-full max-w-md">{children}</div>
       </div>
     </div>

@@ -15,21 +15,19 @@ import { redis, cacheSet, cacheDel } from "../../../shared/src/redis/client";
 // Auth Controller
 // ===========================
 
-const googleClient = new OAuth2Client(
-  process.env.GOOGLE_CLIENT_ID,
-  process.env.GOOGLE_CLIENT_SECRET,
-  `${process.env.APP_URL || "http://localhost:3000"}/api/auth/oauth/google/callback` // Note: We actually handle the redirect to the backend API
-);
+function getOAuth2Client(req: Request): OAuth2Client {
+  const clientId = process.env.GOOGLE_CLIENT_ID;
+  const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
+  
+  const proto = (req.headers["x-forwarded-proto"] as string) || req.protocol;
+  const host = req.get("host");
+  
+  // We explicitly ignore process.env.GOOGLE_CALLBACK_URL to prevent
+  // accidental misconfiguration where the frontend URL is provided instead.
+  const redirectUri = `${proto}://${host}/api/auth/oauth/google/callback`;
 
-// We need the redirect URI to point to the backend callback
-const GOOGLE_REDIRECT_URI = `${process.env.APP_URL ? process.env.APP_URL.replace('3000', '4001') : "http://localhost:4001"}/api/auth/oauth/google/callback`;
-
-// Re-instantiate with the proper backend redirect URI
-const oauth2Client = new OAuth2Client(
-  process.env.GOOGLE_CLIENT_ID,
-  process.env.GOOGLE_CLIENT_SECRET,
-  GOOGLE_REDIRECT_URI
-);
+  return new OAuth2Client(clientId, clientSecret, redirectUri);
+}
 
 const registerSchema = Joi.object({
   email: Joi.string().email().required(),
@@ -243,7 +241,18 @@ export class AuthController {
 
   /** GET /api/auth/oauth/google */
   googleAuthRedirect = asyncHandler(async (req: Request, res: Response) => {
-    const url = oauth2Client.generateAuthUrl({
+    const clientId = process.env.GOOGLE_CLIENT_ID;
+    const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
+    const frontendUrl = process.env.APP_URL || "http://localhost:3000";
+
+    if (!clientId || !clientSecret) {
+      console.error("[Auth Service] Google OAuth credentials are not configured in environment variables!");
+      res.redirect(`${frontendUrl}/login?error=GoogleNotConfigured`);
+      return;
+    }
+
+    const client = getOAuth2Client(req);
+    const url = client.generateAuthUrl({
       access_type: "offline",
       scope: ["email", "profile"],
       prompt: "consent",
@@ -254,18 +263,30 @@ export class AuthController {
   /** GET /api/auth/oauth/google/callback */
   googleAuthCallback = asyncHandler(async (req: Request, res: Response) => {
     const code = req.query.code as string;
+    const frontendUrl = process.env.APP_URL || "http://localhost:3000";
+
     if (!code) {
-      res.redirect(`${process.env.APP_URL || "http://localhost:3000"}/login?error=OAuthFailed`);
+      res.redirect(`${frontendUrl}/login?error=OAuthFailed`);
+      return;
+    }
+
+    const clientId = process.env.GOOGLE_CLIENT_ID;
+    const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
+
+    if (!clientId || !clientSecret) {
+      console.error("[Auth Service] Google OAuth credentials are not configured in environment variables!");
+      res.redirect(`${frontendUrl}/login?error=GoogleNotConfigured`);
       return;
     }
 
     try {
-      const { tokens: googleTokens } = await oauth2Client.getToken(code);
-      oauth2Client.setCredentials(googleTokens);
+      const client = getOAuth2Client(req);
+      const { tokens: googleTokens } = await client.getToken(code);
+      client.setCredentials(googleTokens);
 
-      const ticket = await oauth2Client.verifyIdToken({
+      const ticket = await client.verifyIdToken({
         idToken: googleTokens.id_token!,
-        audience: process.env.GOOGLE_CLIENT_ID,
+        audience: clientId,
       });
       const payload = ticket.getPayload();
 
@@ -281,7 +302,7 @@ export class AuthController {
       // Check if user exists
       const existing = await query(
         `SELECT id, email, display_name, avatar_url, user_type,
-                preferred_lang, sign_language, is_verified, created_at, updated_at
+                preferred_lang, sign_language, is_verified, oauth_provider, oauth_id, created_at, updated_at
          FROM users WHERE email = $1`,
         [email]
       );
@@ -314,7 +335,6 @@ export class AuthController {
       await cacheSet(`refresh:${user.id}`, appTokens.refreshToken, 7 * 24 * 3600);
 
       // Redirect to frontend with tokens in URL
-      const frontendUrl = process.env.APP_URL || "http://localhost:3000";
       
       // Pass the user object as a URL-encoded string so frontend can hydrate state instantly
       const userStr = encodeURIComponent(JSON.stringify({
@@ -333,7 +353,7 @@ export class AuthController {
       );
     } catch (error) {
       console.error("Google OAuth Error:", error);
-      res.redirect(`${process.env.APP_URL || "http://localhost:3000"}/login?error=OAuthFailed`);
+      res.redirect(`${frontendUrl}/login?error=OAuthFailed`);
     }
   });
 }

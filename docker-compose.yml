@@ -91,6 +91,9 @@ services:
       - JWT_ACCESS_SECRET=${JWT_ACCESS_SECRET:-dev-access-secret}
       - JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET:-dev-refresh-secret}
       - APP_URL=http://localhost:3000
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
+      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
+      - GOOGLE_CALLBACK_URL=${GOOGLE_CALLBACK_URL}
     depends_on:
       postgres:
         condition: service_healthy

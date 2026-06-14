@@ -54,18 +54,25 @@ const io = new Server(httpServer, {
 });
 
 // Redis adapter for multi-instance scalability
-const redisUrl = process.env.REDIS_URL || "redis://localhost:6379";
-const redisOptions = redisUrl.startsWith("rediss://") 
-  ? { lazyConnect: true, tls: { rejectUnauthorized: false } } 
-  : { lazyConnect: true };
+const redisUrl = process.env.REDIS_URL || "redis://127.0.0.1:6379";
+const redisOptions = {
+  lazyConnect: true,
+  maxRetriesPerRequest: 3, // Fail fast to trigger in-memory fallback quickly
+  ...(redisUrl.startsWith("rediss://") ? { tls: { rejectUnauthorized: false } } : {}),
+};
 const pubClient = new Redis(redisUrl, redisOptions);
-const subClient = pubClient.duplicate();
+pubClient.on("error", (err) => console.error("[Signaling PubClient] Redis Error:", err.message));
 
-Promise.all([pubClient.connect().catch(() => {}), subClient.connect().catch(() => {})]).then(() => {
+const subClient = pubClient.duplicate();
+subClient.on("error", (err) => console.error("[Signaling SubClient] Redis Error:", err.message));
+
+Promise.all([pubClient.connect(), subClient.connect()]).then(() => {
   io.adapter(createAdapter(pubClient, subClient));
   console.log("[Signaling] Redis adapter connected");
-}).catch(() => {
-  console.warn("[Signaling] Redis adapter failed, using in-memory");
+}).catch((err) => {
+  console.warn("[Signaling] Redis adapter failed, using in-memory:", err.message);
+  pubClient.disconnect();
+  subClient.disconnect();
 });
 
 // --- Auth middleware for Socket.IO ---

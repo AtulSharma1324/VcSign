@@ -1,7 +1,5 @@
 import { Pool, PoolConfig } from "pg";
-import dotenv from "dotenv";
-
-dotenv.config();
+import "../utils/env";
 
 // ===========================
 // PostgreSQL Connection Pool

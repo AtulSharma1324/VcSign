@@ -17,7 +17,7 @@ import {
 function createClient(baseURL: string) {
   const client = axios.create({
     baseURL,
-    timeout: 15_000,
+    timeout: 60_000, // Increased to 60s to handle Render free-tier cold starts
     headers: { "Content-Type": "application/json" },
   });
 

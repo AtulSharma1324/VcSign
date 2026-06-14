@@ -4,7 +4,7 @@ WORKDIR /app
 
 # Dependencies
 COPY package.json package-lock.json* ./
-RUN npm install --omit=dev
+RUN npm install
 
 # Build
 COPY . .
@@ -20,7 +20,6 @@ ENV NEXT_TELEMETRY_DISABLED=1
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 
-COPY --from=base /app/public ./public
 COPY --from=base --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=base --chown=nextjs:nodejs /app/.next/static ./.next/static
 

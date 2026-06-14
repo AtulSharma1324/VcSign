@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import { Mail, Lock, Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
@@ -10,6 +10,19 @@ import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { useAuthStore } from "@/stores/authStore";
 import { authApi } from "@/lib/api";
+
+function OAuthErrorTracker() {
+  const searchParams = useSearchParams();
+  useEffect(() => {
+    const error = searchParams.get("error");
+    if (error === "OAuthFailed") {
+      toast.error("Google authentication failed. Please try again.");
+    } else if (error === "GoogleNotConfigured") {
+      toast.error("Google Sign-In is not configured. Please set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET on the server.");
+    }
+  }, [searchParams]);
+  return null;
+}
 
 export default function LoginPage() {
   const router = useRouter();
@@ -55,6 +68,9 @@ export default function LoginPage() {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
     >
+      <Suspense fallback={null}>
+        <OAuthErrorTracker />
+      </Suspense>
       <div className="text-center mb-8">
         <h1 className="text-2xl font-bold font-[family-name:var(--font-display)]">
           Welcome Back

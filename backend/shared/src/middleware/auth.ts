@@ -1,8 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
-import dotenv from "dotenv";
-
-dotenv.config();
+import "../utils/env";
 
 // ===========================
 // JWT Auth Middleware
@@ -23,7 +21,7 @@ declare global {
   }
 }
 
-const JWT_ACCESS_SECRET = process.env.JWT_ACCESS_SECRET || "dev-access-secret";
+const getAccessSecret = () => process.env.JWT_ACCESS_SECRET || "dev-access-secret";
 
 /** Verify JWT access token from Authorization header. */
 export function authMiddleware(
@@ -44,7 +42,7 @@ export function authMiddleware(
   const token = authHeader.split(" ")[1];
 
   try {
-    const payload = jwt.verify(token, JWT_ACCESS_SECRET) as AuthPayload;
+    const payload = jwt.verify(token, getAccessSecret()) as AuthPayload;
     req.user = payload;
     next();
   } catch (err) {
@@ -64,7 +62,7 @@ export function authMiddleware(
 
 /** Generate JWT tokens. */
 export function generateTokens(payload: { userId: string; email: string }) {
-  const accessToken = jwt.sign(payload, JWT_ACCESS_SECRET, {
+  const accessToken = jwt.sign(payload, getAccessSecret(), {
     expiresIn: process.env.JWT_ACCESS_EXPIRY || "15m",
   });
 
