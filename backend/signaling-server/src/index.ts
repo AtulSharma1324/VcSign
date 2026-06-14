@@ -55,7 +55,9 @@ const io = new Server(httpServer, {
 
 // Redis adapter for multi-instance scalability
 const redisUrl = process.env.REDIS_URL || "redis://localhost:6379";
-const redisOptions = redisUrl.startsWith("rediss://") ? { tls: { rejectUnauthorized: false } } : {};
+const redisOptions = redisUrl.startsWith("rediss://") 
+  ? { lazyConnect: true, tls: { rejectUnauthorized: false } } 
+  : { lazyConnect: true };
 const pubClient = new Redis(redisUrl, redisOptions);
 const subClient = pubClient.duplicate();
 
