@@ -25,7 +25,12 @@ const PORT = process.env.SIGNALING_PORT || 4000;
 
 // Middleware
 app.use(helmet());
-app.use(cors({ origin: process.env.APP_URL || "http://localhost:3000", credentials: true }));
+app.use(cors({
+  origin: function (origin, callback) {
+    return callback(null, true);
+  },
+  credentials: true
+}));
 app.use(morgan("short"));
 app.use(express.json());
 
@@ -37,7 +42,9 @@ app.get("/health", (_req, res) => {
 // --- Socket.IO Setup ---
 const io = new Server(httpServer, {
   cors: {
-    origin: process.env.APP_URL || "http://localhost:3000",
+    origin: function (origin, callback) {
+      return callback(null, true);
+    },
     methods: ["GET", "POST"],
     credentials: true,
   },

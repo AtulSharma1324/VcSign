@@ -17,7 +17,12 @@ const PORT = process.env.AUTH_SERVICE_PORT || 4001;
 
 // Middleware
 app.use(helmet());
-app.use(cors({ origin: process.env.APP_URL || "http://localhost:3000", credentials: true }));
+app.use(cors({
+  origin: function (origin, callback) {
+    return callback(null, true);
+  },
+  credentials: true
+}));
 app.use(morgan("short"));
 app.use(express.json());
 

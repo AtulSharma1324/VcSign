@@ -38,12 +38,12 @@ const registerSchema = Joi.object({
   userType: Joi.string()
     .valid("deaf", "hearing", "both")
     .default("both"),
-});
+}).options({ stripUnknown: true });
 
 const loginSchema = Joi.object({
   email: Joi.string().email().required(),
   password: Joi.string().required(),
-});
+}).options({ stripUnknown: true });
 
 export class AuthController {
   /** POST /api/auth/register */
@@ -155,6 +155,12 @@ export class AuthController {
     }
 
     const user = result.rows[0];
+
+    if (!user.password_hash) {
+      res.status(401).json({ message: "Invalid email or password" });
+      return;
+    }
+
     const isPasswordValid = await bcrypt.compare(password, user.password_hash);
 
     if (!isPasswordValid) {

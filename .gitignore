@@ -56,3 +56,6 @@ ai-service/text_to_speech/app/voices/*.onnx
 *.bak
 *.tmp
 .turbo/
+
+.vercel
+.env*

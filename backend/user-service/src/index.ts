@@ -10,7 +10,12 @@ const app = express();
 const PORT = process.env.USER_SERVICE_PORT || 4002;
 
 app.use(helmet());
-app.use(cors({ origin: process.env.APP_URL || "http://localhost:3000", credentials: true }));
+app.use(cors({
+  origin: function (origin, callback) {
+    return callback(null, true);
+  },
+  credentials: true
+}));
 app.use(morgan("short"));
 app.use(express.json());
 

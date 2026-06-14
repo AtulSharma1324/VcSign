@@ -32,7 +32,7 @@ export async function cacheSet(
   value: unknown,
   ttlSeconds?: number
 ): Promise<void> {
-  const serialized = JSON.stringify(value);
+  const serialized = typeof value === "string" ? value : JSON.stringify(value);
   if (ttlSeconds) {
     await redis.setex(key, ttlSeconds, serialized);
   } else {
@@ -44,7 +44,11 @@ export async function cacheSet(
 export async function cacheGet<T = unknown>(key: string): Promise<T | null> {
   const data = await redis.get(key);
   if (!data) return null;
-  return JSON.parse(data) as T;
+  try {
+    return JSON.parse(data) as T;
+  } catch {
+    return data as unknown as T;
+  }
 }
 
 /** Delete a cached value. */
