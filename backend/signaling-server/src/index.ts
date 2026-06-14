@@ -21,14 +21,12 @@ dotenv.config({ path: "../../.env" });
 
 const app = express();
 const httpServer = createServer(app);
-const PORT = process.env.SIGNALING_PORT || 4000;
+const PORT = process.env.PORT || process.env.SIGNALING_PORT || 4000;
 
 // Middleware
 app.use(helmet());
 app.use(cors({
-  origin: function (origin, callback) {
-    return callback(null, true);
-  },
+  origin: true,
   credentials: true
 }));
 app.use(morgan("short"));
@@ -45,9 +43,7 @@ app.get("/", (_req, res) => {
 // --- Socket.IO Setup ---
 const io = new Server(httpServer, {
   cors: {
-    origin: function (origin, callback) {
-      return callback(null, true);
-    },
+    origin: true,
     methods: ["GET", "POST"],
     credentials: true,
   },
@@ -59,7 +55,8 @@ const io = new Server(httpServer, {
 
 // Redis adapter for multi-instance scalability
 const redisUrl = process.env.REDIS_URL || "redis://localhost:6379";
-const pubClient = new Redis(redisUrl);
+const redisOptions = redisUrl.startsWith("rediss://") ? { tls: { rejectUnauthorized: false } } : {};
+const pubClient = new Redis(redisUrl, redisOptions);
 const subClient = pubClient.duplicate();
 
 Promise.all([pubClient.connect().catch(() => {}), subClient.connect().catch(() => {})]).then(() => {

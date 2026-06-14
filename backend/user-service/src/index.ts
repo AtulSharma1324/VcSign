@@ -7,13 +7,11 @@ import dotenv from "dotenv";
 dotenv.config({ path: "../../.env" });
 
 const app = express();
-const PORT = process.env.USER_SERVICE_PORT || 4002;
+const PORT = process.env.PORT || process.env.USER_SERVICE_PORT || 4002;
 
 app.use(helmet());
 app.use(cors({
-  origin: function (origin, callback) {
-    return callback(null, true);
-  },
+  origin: true,
   credentials: true
 }));
 app.use(morgan("short"));

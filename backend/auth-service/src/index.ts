@@ -13,14 +13,12 @@ dotenv.config({ path: "../../.env" });
 // ===========================
 
 const app = express();
-const PORT = process.env.AUTH_SERVICE_PORT || 4001;
+const PORT = process.env.PORT || process.env.AUTH_SERVICE_PORT || 4001;
 
 // Middleware
 app.use(helmet());
 app.use(cors({
-  origin: function (origin, callback) {
-    return callback(null, true);
-  },
+  origin: true,
   credentials: true
 }));
 app.use(morgan("short"));

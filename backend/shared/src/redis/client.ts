@@ -16,6 +16,7 @@ export const redis = new Redis(redisUrl, {
     return delay;
   },
   lazyConnect: true,
+  tls: redisUrl.startsWith("rediss://") ? { rejectUnauthorized: false } : undefined,
 });
 
 redis.on("connect", () => {
