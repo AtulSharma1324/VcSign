@@ -33,6 +33,9 @@ app.use("/api/auth", authRoutes);
 app.get("/health", (_req, res) => {
   res.json({ status: "ok", service: "auth-service" });
 });
+app.get("/", (_req, res) => {
+  res.send("Auth Service OK");
+});
 
 // Error handler
 app.use(errorHandler);

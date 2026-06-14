@@ -38,6 +38,9 @@ app.use(express.json());
 app.get("/health", (_req, res) => {
   res.json({ status: "ok", service: "signaling-server" });
 });
+app.get("/", (_req, res) => {
+  res.send("Signaling Server OK");
+});
 
 // --- Socket.IO Setup ---
 const io = new Server(httpServer, {

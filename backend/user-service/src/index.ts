@@ -19,8 +19,12 @@ app.use(cors({
 app.use(morgan("short"));
 app.use(express.json());
 
+// Health check
 app.get("/health", (_req, res) => {
   res.json({ status: "ok", service: "user-service" });
+});
+app.get("/", (_req, res) => {
+  res.send("User Service OK");
 });
 
 app.get("/api/users/me", (req, res) => {
